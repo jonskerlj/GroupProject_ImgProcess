@@ -14,7 +14,7 @@ small_col = floor(col_tot/3);
 %slice = zeros(small_row, small_col, 20*3);
 count = 1;
 for i=1:15
-    for j = 1:2
+    for j = 1:3
         if (i == 1) & (j == 1)
             slice(:,:,count) = gray(1:small_row, 1:small_col);
             count = count + 1;
@@ -32,6 +32,8 @@ for i=1:15
     end
 end
 
+figure;
+montage(slice)
 
 %% Correlation between slices and original image
 %correlation_out = zeros(row_tot,col_tot, 20*3);
