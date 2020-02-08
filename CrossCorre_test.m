@@ -38,7 +38,7 @@ montage(slice)
 %% Correlation between slices and original image
 %correlation_out = zeros(row_tot,col_tot, 20*3);
 
-
+good_correlations = []
 
 for i = 1:size(slice,3)
     sample = slice(:,:,i);
@@ -51,7 +51,62 @@ for i = 1:size(correlation_out, 3)
     
    test(:,:,i) = correlation_out(:,:,i)>0.4;
    subplot(1,2,2); imshow(test(:,:,i));
+   
    regions = regionprops(test(:,:,i));
+   
+   counter = 0;
+   areas = zeros(size(regions,1),1);
+   % can filter out small areas as well before testing centroids
+   for n = 1:size(regions,1)
+        areas(n,1) = regions(n).Area;
+   end
+   small_area = areas<50;
+   regions(small_area) = [];
+   
+   if size(regions,2)>0
+       for j = 1:size(regions,1)
+            for k = 1:size(regions,1)
+                if abs(regions(j).Centroid(1)-regions(k).Centroid(1))<10
+                    counter = counter + 1;
+                end
+            end
+       end
+   end
+   % Have to subtract with the number of areas because the loop compares 
+   % the one element with itself for each iteration of bigger loop
+   counter = counter - size(regions,1);
+   
+   % 16 = number of repetitions^2 (4 aretfacts)
+   if counter>16
+       good_correlations = [good_correlations i];
+   end
 end
 
 %% 
+clear artefacts;
+artefacts = [];
+% for i = good_correlations
+%     artefacts = regionprops(test(:,:,i));
+%     
+%     areas = zeros(size(regions,1),1);
+%     for n = 1:size(regions,1)
+%         areas(n,1) = regions(n).Area;
+%    end
+%    small_area = areas<50;
+%    artefacts(small_area) = [];
+% end
+
+% select the second element of good correlation and find the artefacts
+arte = regionprops(test(:,:,good_correlations(2)));
+
+figure(5);
+imagesc(I);
+hold on;
+% shifted for some reason - have to fix
+for i=1:size(arte,1)
+    h(i, 1)= rectangle('Position',[round(arte(i).BoundingBox(1)) round(arte(i).BoundingBox(2)) ...
+        round(arte(i).BoundingBox(3)) round(arte(i).BoundingBox(4))]);
+    set(h(i),'EdgeColor',[1 0 0]); % Hint: use you colourmap
+
+end
+   
