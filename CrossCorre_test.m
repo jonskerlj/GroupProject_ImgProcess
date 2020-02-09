@@ -42,7 +42,7 @@ good_correlations = []
 
 for i = 1:size(slice,3)
     sample = slice(:,:,i);
-    correlation_out(:,:,i)= normxcorr2(sample,gray);
+    correlation_out(:,:,i)= normxcorr2e(sample,gray, 'same');
       
 end
 figure;
@@ -82,7 +82,8 @@ for i = 1:size(correlation_out, 3)
    end
 end
 
-%% 
+%% Does not work correctly yet
+% correlation function increases the array size and shifts the positions where artefacts are
 clear artefacts;
 artefacts = [];
 % for i = good_correlations
@@ -102,11 +103,37 @@ arte = regionprops(test(:,:,good_correlations(2)));
 figure(5);
 imagesc(I);
 hold on;
-% shifted for some reason - have to fix
+%shifted for some reason - have to fix
 for i=1:size(arte,1)
-    h(i, 1)= rectangle('Position',[round(arte(i).BoundingBox(1)) round(arte(i).BoundingBox(2)) ...
+    h(i, 1)= rectangle('Position',[round(arte(i).BoundingBox(1)) ...
+        round(arte(i).BoundingBox(2)) ...
         round(arte(i).BoundingBox(3)) round(arte(i).BoundingBox(4))]);
     set(h(i),'EdgeColor',[1 0 0]); % Hint: use you colourmap
 
 end
-   
+
+%% Temporary location finder - needs to be improved
+close all;
+width = small_col;
+height = small_row;
+
+figure(6);
+imagesc(I);
+hold on;
+no = 1
+for i = good_correlations(1:3)
+    modulus = mod(i,3);
+    if modulus == 0
+        y = 20*i/3-20+i/3-1;
+        x = round(2*col_tot/3)+1;
+    elseif modulus == 1
+        y = 20*floor(i/3)+floor(i/3);
+        x = 1;
+    else
+        y = 20*floor(i/3)+floor(i/3);
+        x = round(col_tot/3)+1;
+    end
+    h(no, 1)= rectangle('Position',[x y width height]);
+    set(h(no),'EdgeColor',[1 0 0]); % Hint: use you colourmap
+    no = no + 1;
+end
