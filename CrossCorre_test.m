@@ -2,11 +2,11 @@
 clear all; close all;
 I = imread('Reverb_model.png');
 
-gray = rgb2gray(I);
+gray_I = rgb2gray(I);
 
 %gray(314:360,230:240) = 0;
 
-[row_tot, col_tot] = size(gray);
+[row_tot, col_tot] = size(gray_I);
 
 small_row = floor(row_tot/15);
 small_col = floor(col_tot/3);
@@ -16,16 +16,16 @@ count = 1;
 for i=1:15
     for j = 1:3
         if (i == 1) & (j == 1)
-            slice(:,:,count) = gray(1:small_row, 1:small_col);
+            slice(:,:,count) = gray_I(1:small_row, 1:small_col);
             count = count + 1;
         elseif (i == 1)   
-            slice(:,:,count) = gray(1:small_row, (j-1)*small_col+1:j*small_col);
+            slice(:,:,count) = gray_I(1:small_row, (j-1)*small_col+1:j*small_col);
             count = count + 1;
         elseif (j == 1)   
-            slice(:,:,count) = gray((i-1)*small_row+1:i*small_row, 1:small_col);
+            slice(:,:,count) = gray_I((i-1)*small_row+1:i*small_row, 1:small_col);
             count = count + 1;
         else
-            slice(:,:,count) = gray((i-1)*small_row+1:i*small_row, (j-1)*small_col+1:j*small_col);
+            slice(:,:,count) = gray_I((i-1)*small_row+1:i*small_row, (j-1)*small_col+1:j*small_col);
             count = count + 1;
         end
         
@@ -38,18 +38,18 @@ montage(slice)
 %% Correlation between slices and original image
 %correlation_out = zeros(row_tot,col_tot, 20*3);
 
-good_correlations = []
+good_correlations = [];
 
 for i = 1:size(slice,3)
     sample = slice(:,:,i);
-    correlation_out(:,:,i)= normxcorr2e(sample,gray, 'same');
+    correlation_out(:,:,i)= normxcorr2e(sample,gray_I,'same');
       
 end
 figure;
 for i = 1:size(correlation_out, 3)
    subplot(1,2,1); imshow(slice(:,:,i))
     
-   test(:,:,i) = correlation_out(:,:,i)>0.4;
+   test(:,:,i) = correlation_out(:,:,i)>0.45;
    subplot(1,2,2); imshow(test(:,:,i));
    
    regions = regionprops(test(:,:,i));
@@ -63,6 +63,8 @@ for i = 1:size(correlation_out, 3)
    small_area = areas<50;
    regions(small_area) = [];
    
+   % Logic test if centroids are within +- 10 pixels in x-directions
+   % Using assumption that artefact appears at the same x location
    if size(regions,2)>0
        for j = 1:size(regions,1)
             for k = 1:size(regions,1)
@@ -82,42 +84,43 @@ for i = 1:size(correlation_out, 3)
    end
 end
 
-%% Does not work correctly yet
-% correlation function increases the array size and shifts the positions where artefacts are
-clear artefacts;
-artefacts = [];
-% for i = good_correlations
-%     artefacts = regionprops(test(:,:,i));
-%     
-%     areas = zeros(size(regions,1),1);
-%     for n = 1:size(regions,1)
-%         areas(n,1) = regions(n).Area;
-%    end
-%    small_area = areas<50;
-%    artefacts(small_area) = [];
-% end
+%% Eliminate bad correlations
+good_samples = test(:,:,good_correlations);
 
-% select the second element of good correlation and find the artefacts
-arte = regionprops(test(:,:,good_correlations(2)));
 
-figure(5);
-imagesc(I);
-hold on;
-%shifted for some reason - have to fix
-for i=1:size(arte,1)
-    h(i, 1)= rectangle('Position',[round(arte(i).BoundingBox(1)) ...
-        round(arte(i).BoundingBox(2)) ...
-        round(arte(i).BoundingBox(3)) round(arte(i).BoundingBox(4))]);
-    set(h(i),'EdgeColor',[1 0 0]); % Hint: use you colourmap
-
+for i = 1:size(good_samples,3)
+    figure;
+    imagesc(gray_I); colormap(gray(128)); hold on;
+    
+    % filter out small areas
+    regions = regionprops(good_samples(:,:,i));
+    areas = zeros(size(regions,1),1);
+    for n = 1:size(regions,1)
+        areas(n,1) = regions(n).Area;
+    end
+    small_area = areas<50;
+    regions(small_area) = [];
+    
+    %display rectangles around artefacts for each "good" correlation
+    for j=1:size(regions,1)
+        x = regions(j).BoundingBox(1);
+        y = regions(j).BoundingBox(2);
+        width = regions(j).BoundingBox(3);
+        height = regions(j).BoundingBox(4);
+        h(j, 1)= rectangle('Position',[x y width height]);
+        set(h(j),'EdgeColor',[1 0 0]);
+    end
+   
 end
+
+
 
 %% Temporary location finder - needs to be improved
 close all;
 width = small_col;
 height = small_row;
 
-figure(6);
+figure;
 imagesc(I);
 hold on;
 no = 1
