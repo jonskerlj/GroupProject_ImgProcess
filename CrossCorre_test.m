@@ -1,6 +1,6 @@
 %% Scanning the whole image to find the best cross correlation match
 clear all; close all;
-I = imread('Reverb_model.png');
+I = imread('Reverberation_test2.jpg');
 
 gray_I = rgb2gray(I);
 
@@ -75,7 +75,7 @@ for i = 1:size(correlation_out, 3)
        end
    end
    % Have to subtract with the number of areas because the loop compares 
-   % the one element with itself for each iteration of bigger loop
+   % the one element with itself for each iteration of the bigger loop
    counter = counter - size(regions,1);
    
    % 16 = number of repetitions^2 (4 aretfacts)

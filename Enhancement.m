@@ -103,8 +103,24 @@ subplot(1,3,1); imagesc(BW_orig); colormap(gray(256)); title('Initial binary ima
 subplot(1,3,2); imagesc(BW);colormap(gray(256)); title('Filtering out top part of image')
 subplot(1,3,3); imagesc(BW_modified);colormap(gray(256));title('Locating the artefact');
 
-%% Testing 2d fast fourier transform
-% Y = fft2(gray_I);
-% 
-% figure(3)
-% imagesc(abs(fftshift(Y)))
+%% Testing regionfill
+low_x = round(Regions(1).BoundingBox(1));
+high_x = round(Regions(1).BoundingBox(1) + Regions(1).BoundingBox(3));
+low_y = round(Regions(1).BoundingBox(2));
+high_y = round(Regions(1).BoundingBox(2) + Regions(1).BoundingBox(4));
+
+x = [low_x high_x high_x low_x];
+y = [low_y low_y high_y high_y];
+
+% x = [0 250 250 0];
+% y = [0 0 500 500];
+
+J = regionfill(gray_I, x,y);
+
+figure
+subplot(1,2,1)
+imshow(I)
+title('Original image')
+subplot(1,2,2)
+imshow(J)
+title('Image without artefact')
